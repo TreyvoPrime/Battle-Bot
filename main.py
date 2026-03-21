@@ -4,7 +4,9 @@ from discord import app_commands
 import asyncio
 from datetime import datetime, timedelta
 import os
+
 print("STARTING BOT FILE")
+
 TOKEN = os.getenv("TOKEN")
 
 # =========================
@@ -145,7 +147,7 @@ class BattleModal(discord.ui.Modal):
         )
 
         # =========================
-        # INITIAL RESPONSE (ACK)
+        # INITIAL RESPONSE
         # =========================
         await interaction.response.send_message(
             f"⚔️ **Battle Ping Started**\n"
@@ -185,7 +187,7 @@ class BattleModal(discord.ui.Modal):
                     failed += 1
 
         # =========================
-        # FINAL SUMMARY (IMPORTANT FIX)
+        # FINAL SUMMARY
         # =========================
         await interaction.followup.send(
             f"✅ **Battle Ping Complete**\n"
@@ -194,6 +196,20 @@ class BattleModal(discord.ui.Modal):
             f"⏭️ Skipped (already in VC): {skipped}\n"
             f"❌ Failed: {failed}"
         )
+
+        # =========================
+        # TERMINAL LOGGING (YOUR REQUEST)
+        # =========================
+        print("\n===== BATTLEPING LOG =====")
+        print(f"User: {user} (ID: {user.id})")
+        print(f"Regiment: {self.regiment}")
+        print(f"Message: {message}")
+        print(f"VC Link: {self.vc_link.value}")
+        print(f"Sent: {sent}")
+        print(f"Skipped (in VC): {skipped}")
+        print(f"Failed: {failed}")
+        print(f"Time (UTC): {datetime.utcnow()}")
+        print("==========================\n")
 
 
 # =========================
