@@ -59,6 +59,22 @@ class RegimentConfig:
     sort_order: int
 
 
+@dataclass
+class AuditLogEntry:
+    id: int
+    guild_id: int
+    dispatched_by_user_id: str
+    dispatched_by_name: str
+    regiment_name: str
+    role_id: int
+    voice_channel_link: str
+    custom_message: str
+    sent_count: int
+    skipped_count: int
+    failed_count: int
+    created_at: str
+
+
 class Database:
     def __init__(self, db_path: Path):
         self.db_path = db_path
@@ -127,6 +143,33 @@ class Database:
                     user_id TEXT NOT NULL,
                     access_token TEXT NOT NULL,
                     user_payload TEXT NOT NULL,
+                    guilds_payload TEXT NOT NULL DEFAULT '[]',
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            oauth_columns = {
+                row[1]
+                for row in await (await db.execute("PRAGMA table_info(oauth_sessions)")).fetchall()
+            }
+            if "guilds_payload" not in oauth_columns:
+                await db.execute(
+                    "ALTER TABLE oauth_sessions ADD COLUMN guilds_payload TEXT NOT NULL DEFAULT '[]'"
+                )
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS dispatch_audit_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    guild_id INTEGER NOT NULL,
+                    dispatched_by_user_id TEXT NOT NULL,
+                    dispatched_by_name TEXT NOT NULL,
+                    regiment_name TEXT NOT NULL,
+                    role_id INTEGER NOT NULL,
+                    voice_channel_link TEXT NOT NULL,
+                    custom_message TEXT NOT NULL,
+                    sent_count INTEGER NOT NULL,
+                    skipped_count INTEGER NOT NULL,
+                    failed_count INTEGER NOT NULL,
                     created_at TEXT NOT NULL
                 )
                 """
@@ -274,19 +317,20 @@ class Database:
             await db.commit()
         return cursor.rowcount > 0
 
-    async def create_oauth_session(self, user_payload: dict, access_token: str) -> str:
+    async def create_oauth_session(self, user_payload: dict, guilds_payload: list[dict], access_token: str) -> str:
         session_id = secrets.token_urlsafe(32)
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                INSERT INTO oauth_sessions (session_id, user_id, access_token, user_payload, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO oauth_sessions (session_id, user_id, access_token, user_payload, guilds_payload, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
                     session_id,
                     str(user_payload["id"]),
                     access_token,
                     json.dumps(user_payload),
+                    json.dumps(guilds_payload),
                     utc_now().isoformat(),
                 ),
             )
@@ -297,7 +341,7 @@ class Database:
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT user_id, access_token, user_payload, created_at
+                SELECT user_id, access_token, user_payload, guilds_payload, created_at
                 FROM oauth_sessions
                 WHERE session_id = ?
                 """,
@@ -306,13 +350,14 @@ class Database:
             row = await cursor.fetchone()
         if not row:
             return None
-        user_id, access_token, user_payload, created_at = row
+        user_id, access_token, user_payload, guilds_payload, created_at = row
         payload = json.loads(user_payload)
         payload["id"] = user_id
         return {
             "session_id": session_id,
             "access_token": access_token,
             "user": payload,
+            "guilds": json.loads(guilds_payload),
             "created_at": created_at,
         }
 
@@ -320,6 +365,60 @@ class Database:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("DELETE FROM oauth_sessions WHERE session_id = ?", (session_id,))
             await db.commit()
+
+    async def create_dispatch_audit_log(
+        self,
+        guild_id: int,
+        dispatched_by_user_id: str,
+        dispatched_by_name: str,
+        regiment_name: str,
+        role_id: int,
+        voice_channel_link: str,
+        custom_message: str,
+        sent_count: int,
+        skipped_count: int,
+        failed_count: int,
+    ) -> None:
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                """
+                INSERT INTO dispatch_audit_logs (
+                    guild_id, dispatched_by_user_id, dispatched_by_name, regiment_name, role_id,
+                    voice_channel_link, custom_message, sent_count, skipped_count, failed_count, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    guild_id,
+                    dispatched_by_user_id,
+                    dispatched_by_name,
+                    regiment_name,
+                    role_id,
+                    voice_channel_link,
+                    custom_message,
+                    sent_count,
+                    skipped_count,
+                    failed_count,
+                    utc_now().isoformat(),
+                ),
+            )
+            await db.commit()
+
+    async def get_dispatch_audit_logs(self, guild_id: int, limit: int = 20) -> list[AuditLogEntry]:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                SELECT id, guild_id, dispatched_by_user_id, dispatched_by_name, regiment_name, role_id,
+                       voice_channel_link, custom_message, sent_count, skipped_count, failed_count, created_at
+                FROM dispatch_audit_logs
+                WHERE guild_id = ?
+                ORDER BY datetime(created_at) DESC
+                LIMIT ?
+                """,
+                (guild_id, limit),
+            )
+            rows = await cursor.fetchall()
+        return [AuditLogEntry(*row) for row in rows]
 
 
 database = Database(DATABASE_PATH)
@@ -433,8 +532,13 @@ async def fetch_discord_identity(access_token: str) -> tuple[dict, list[dict]]:
 def avatar_url_for(user: dict) -> str:
     avatar_hash = user.get("avatar")
     if avatar_hash:
-        return f"https://cdn.discordapp.com/avatars/{user['id']}/{avatar_hash}.png?size=128"
-    default_index = int(user["discriminator"]) % 5 if user.get("discriminator", "0").isdigit() else 0
+        extension = "gif" if str(avatar_hash).startswith("a_") else "png"
+        return f"https://cdn.discordapp.com/avatars/{user['id']}/{avatar_hash}.{extension}?size=128"
+    discriminator = str(user.get("discriminator", "0"))
+    if discriminator.isdigit() and discriminator != "0":
+        default_index = int(discriminator) % 5
+    else:
+        default_index = (int(user["id"]) >> 22) % 6
     return f"https://cdn.discordapp.com/embed/avatars/{default_index}.png"
 
 
@@ -450,6 +554,7 @@ async def get_session_user(request: Request) -> Optional[dict]:
     user = dict(session_data["user"])
     user["access_token"] = session_data["access_token"]
     user["session_id"] = session_id
+    user["guilds"] = session_data["guilds"]
     return user
 
 
@@ -462,14 +567,7 @@ async def require_session_user(request: Request) -> dict:
 
 async def get_manageable_guilds_for_user(request: Request) -> list[dict]:
     session_user = await require_session_user(request)
-    try:
-        _, raw_guilds = await fetch_discord_identity(session_user["access_token"])
-    except httpx.HTTPError as exc:
-        session_id = request.session.get("oauth_session_id")
-        if session_id:
-            await database.delete_oauth_session(session_id)
-        request.session.clear()
-        raise HTTPException(status_code=401, detail="Discord session expired. Please log in again.") from exc
+    raw_guilds = session_user.get("guilds", [])
     manageable_guilds = []
 
     for guild_payload in raw_guilds:
@@ -614,6 +712,18 @@ class BattleModal(discord.ui.Modal, title="Dispatch Battle Alert"):
                 ]
             ),
             ephemeral=True,
+        )
+        await database.create_dispatch_audit_log(
+            guild_id=interaction.guild.id,
+            dispatched_by_user_id=str(interaction.user.id),
+            dispatched_by_name=str(interaction.user),
+            regiment_name=self.regiment.regiment_name,
+            role_id=self.regiment.role_id,
+            voice_channel_link=str(self.vc_link.value),
+            custom_message=dispatch_message,
+            sent_count=sent,
+            skipped_count=skipped,
+            failed_count=failed,
         )
 
 
@@ -896,6 +1006,7 @@ async def get_dashboard_context(request: Request, guild_id: int) -> dict:
 
     regiments = await database.get_regiments(guild_id)
     admin_role_ids = set(await database.get_admin_role_ids(guild_id))
+    audit_logs = await database.get_dispatch_audit_logs(guild_id, limit=12)
     roles = [
         serialize_role(role)
         for role in sorted(guild.roles, key=lambda current: current.position, reverse=True)
@@ -909,6 +1020,7 @@ async def get_dashboard_context(request: Request, guild_id: int) -> dict:
         "regiments": regiments,
         "roles": roles,
         "admin_role_ids": admin_role_ids,
+        "audit_logs": audit_logs,
         "dashboard_url": await build_dashboard_url(guild_id),
         "max_regiments": MAX_REGIMENTS_PER_GUILD,
         "user": user,
@@ -962,6 +1074,8 @@ app.add_middleware(
 @app.get("/", response_class=HTMLResponse)
 async def landing(request: Request) -> HTMLResponse:
     session_user = await get_session_user(request)
+    if session_user:
+        session_user["avatar_url"] = avatar_url_for(session_user)
     return templates.TemplateResponse(
         "index.html",
         {
@@ -1011,7 +1125,7 @@ async def auth_callback(request: Request, code: str, state: str) -> RedirectResp
         raise HTTPException(status_code=400, detail="OAuth state mismatch.")
 
     token_payload = await exchange_code_for_token(code)
-    user_payload, _ = await fetch_discord_identity(token_payload["access_token"])
+    user_payload, guilds_payload = await fetch_discord_identity(token_payload["access_token"])
     minimal_user = {
         "id": user_payload["id"],
         "username": user_payload["username"],
@@ -1019,7 +1133,11 @@ async def auth_callback(request: Request, code: str, state: str) -> RedirectResp
         "avatar": user_payload.get("avatar"),
         "discriminator": user_payload.get("discriminator", "0"),
     }
-    request.session["oauth_session_id"] = await database.create_oauth_session(minimal_user, token_payload["access_token"])
+    request.session["oauth_session_id"] = await database.create_oauth_session(
+        minimal_user,
+        guilds_payload,
+        token_payload["access_token"],
+    )
     request.session.pop("oauth_state", None)
     return RedirectResponse("/dashboard", status_code=302)
 
