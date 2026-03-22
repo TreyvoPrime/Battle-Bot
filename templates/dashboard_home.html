@@ -18,7 +18,10 @@
             </a>
             <div class="topbar-actions">
                 <div class="account-chip">
-                    <img src="{{ user.avatar_url }}" alt="Discord avatar">
+                    <div class="avatar-shell">
+                        <img src="{{ user.avatar_url }}" alt="{{ user.username }} avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';">
+                        <span class="avatar-fallback" style="display:none;">{{ (user.global_name or user.username)[:1] }}</span>
+                    </div>
                     <div>
                         <strong>{{ user.global_name or user.username }}</strong>
                         <span>@{{ user.username }}</span>
@@ -33,13 +36,16 @@
                 <div>
                     <span class="section-tag">Server dashboard</span>
                     <h1>Select a server</h1>
-                    <p class="page-subtitle">Open the server you manage and configure alerts, command staff, and regiment targets.</p>
+                    <p class="page-subtitle">Choose a server to manage alerts, regiment routing, and command access from one clean control panel.</p>
+                </div>
+                <div class="hero-badges">
+                    <span class="status-chip">{{ guilds|length }} server{% if guilds|length != 1 %}s{% endif %}</span>
                 </div>
             </section>
 
             <section class="guild-card-grid">
                 {% for guild in guilds %}
-                <article class="guild-panel">
+                <article class="guild-panel official-card">
                     <div class="guild-panel-head">
                         {% if guild.icon %}
                         <img class="guild-avatar" src="{{ guild.icon }}" alt="{{ guild.name }} icon">
@@ -48,7 +54,7 @@
                         {% endif %}
                         <div>
                             <h2>{{ guild.name }}</h2>
-                            <p>{% if guild.owner %}Owner{% else %}Manage Server{% endif %}{% if guild.member_count %} • {{ guild.member_count }} members{% endif %}</p>
+                            <p>{% if guild.owner %}Owner{% else %}Manage Server{% endif %}{% if guild.member_count %} | {{ guild.member_count }} members{% endif %}</p>
                         </div>
                     </div>
                     <div class="guild-panel-foot">

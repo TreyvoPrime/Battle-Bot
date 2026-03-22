@@ -23,7 +23,10 @@
                 <a class="button button-secondary" href="{{ bot_invite_url }}">Invite bot</a>
                 {% endif %}
                 <div class="account-chip">
-                    <img src="{{ user.avatar_url }}" alt="Discord avatar">
+                    <div class="avatar-shell">
+                        <img src="{{ user.avatar_url }}" alt="{{ user.username }} avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';">
+                        <span class="avatar-fallback" style="display:none;">{{ (user.global_name or user.username)[:1] }}</span>
+                    </div>
                     <div>
                         <strong>{{ user.global_name or user.username }}</strong>
                         <span>@{{ user.username }}</span>
@@ -57,7 +60,7 @@
             </aside>
 
             <section class="dashboard-main">
-                <section class="page-hero" id="overview">
+                <section class="page-hero dashboard-hero" id="overview">
                     <div>
                         <span class="section-tag">Server overview</span>
                         <h1>{{ guild.name }}</h1>
@@ -85,7 +88,7 @@
                 </section>
 
                 <section class="panel-grid" id="regiments">
-                    <article class="panel-section panel-span-2">
+                    <article class="panel-section panel-span-2 official-card">
                         <div class="section-heading">
                             <div>
                                 <span class="section-tag">Regiments</span>
@@ -114,7 +117,7 @@
                         {% endif %}
                     </article>
 
-                    <article class="panel-section">
+                    <article class="panel-section official-card">
                         <div class="section-heading">
                             <div>
                                 <span class="section-tag">Add new</span>
@@ -141,7 +144,7 @@
                 </section>
 
                 <section class="panel-grid" id="staff">
-                    <article class="panel-section panel-span-2">
+                    <article class="panel-section panel-span-2 official-card">
                         <div class="section-heading">
                             <div>
                                 <span class="section-tag">Access</span>
@@ -164,7 +167,7 @@
                 </section>
 
                 <section class="panel-grid" id="settings">
-                    <article class="panel-section">
+                    <article class="panel-section official-card">
                         <div class="section-heading">
                             <div>
                                 <span class="section-tag">Dispatch</span>
@@ -180,7 +183,7 @@
                         </form>
                     </article>
 
-                    <article class="panel-section">
+                    <article class="panel-section official-card">
                         <div class="section-heading">
                             <div>
                                 <span class="section-tag">Ready to use</span>

@@ -444,8 +444,13 @@ async def fetch_discord_identity(access_token: str) -> tuple[dict, list[dict]]:
 def avatar_url_for(user: dict) -> str:
     avatar_hash = user.get("avatar")
     if avatar_hash:
-        return f"https://cdn.discordapp.com/avatars/{user['id']}/{avatar_hash}.png?size=128"
-    default_index = int(user["discriminator"]) % 5 if user.get("discriminator", "0").isdigit() else 0
+        extension = "gif" if str(avatar_hash).startswith("a_") else "png"
+        return f"https://cdn.discordapp.com/avatars/{user['id']}/{avatar_hash}.{extension}?size=128"
+    discriminator = str(user.get("discriminator", "0"))
+    if discriminator.isdigit() and discriminator != "0":
+        default_index = int(discriminator) % 5
+    else:
+        default_index = (int(user["id"]) >> 22) % 6
     return f"https://cdn.discordapp.com/embed/avatars/{default_index}.png"
 
 
@@ -967,6 +972,8 @@ app.add_middleware(
 @app.get("/", response_class=HTMLResponse)
 async def landing(request: Request) -> HTMLResponse:
     session_user = await get_session_user(request)
+    if session_user:
+        session_user["avatar_url"] = avatar_url_for(session_user)
     return templates.TemplateResponse(
         "index.html",
         {

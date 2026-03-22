@@ -12,9 +12,9 @@
     --accent-strong: #7aa2ff;
     --danger: #ff6f7d;
     --success: #39c989;
-    --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-    --radius-lg: 24px;
-    --radius-md: 18px;
+    --shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+    --radius-lg: 22px;
+    --radius-md: 16px;
     --radius-sm: 14px;
     --content: 1320px;
 }
@@ -33,8 +33,8 @@ body {
     font-family: "Manrope", sans-serif;
     color: var(--text);
     background:
-        radial-gradient(circle at top left, rgba(91, 140, 255, 0.12), transparent 28%),
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 24%),
+        radial-gradient(circle at top left, rgba(91, 140, 255, 0.1), transparent 26%),
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.04), transparent 22%),
         linear-gradient(180deg, #0c1017 0%, #0d0f14 45%, #10141c 100%);
 }
 
@@ -89,9 +89,9 @@ code {
     gap: 16px;
     padding: 14px 18px;
     border: 1px solid var(--line);
-    border-radius: 22px;
-    background: rgba(20, 24, 33, 0.88);
-    backdrop-filter: blur(18px);
+    border-radius: 18px;
+    background: rgba(17, 21, 30, 0.94);
+    backdrop-filter: blur(14px);
     box-shadow: var(--shadow);
     margin-bottom: 22px;
 }
@@ -113,8 +113,8 @@ code {
     height: 38px;
     display: grid;
     place-items: center;
-    border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent) 0%, #7d96ff 100%);
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4f79da 0%, #648dff 100%);
     color: white;
     font-weight: 800;
 }
@@ -129,7 +129,7 @@ code {
 .button {
     appearance: none;
     border: 1px solid transparent;
-    background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+    background: linear-gradient(180deg, #6f97ff, #4f79da);
     color: white;
     border-radius: 12px;
     padding: 11px 16px;
@@ -144,7 +144,7 @@ code {
 }
 
 .button-secondary {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.025);
     border-color: var(--line-strong);
     color: var(--muted-strong);
 }
@@ -161,16 +161,35 @@ code {
     gap: 12px;
     min-height: 48px;
     padding: 8px 12px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.03);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.025);
     border: 1px solid var(--line);
 }
 
-.account-chip img {
+.avatar-shell {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+}
+
+.account-chip img,
+.avatar-fallback {
     width: 38px;
     height: 38px;
     border-radius: 50%;
+}
+
+.account-chip img {
     object-fit: cover;
+}
+
+.avatar-fallback {
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #32435f, #253247);
+    color: var(--muted-strong);
+    font-weight: 800;
 }
 
 .account-chip div {
@@ -201,7 +220,7 @@ code {
 .feature-card,
 .wizard-card {
     border: 1px solid var(--line);
-    background: linear-gradient(180deg, rgba(23, 27, 36, 0.98), rgba(17, 21, 30, 0.96));
+    background: linear-gradient(180deg, rgba(22, 27, 36, 0.98), rgba(16, 20, 28, 0.98));
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
 }
@@ -211,6 +230,10 @@ code {
     grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
     gap: 24px;
     padding: 30px;
+}
+
+.official-hero {
+    border-color: #2a3343;
 }
 
 .hero-copy {
@@ -223,7 +246,7 @@ code {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: var(--accent-strong);
+    color: #89a8ff;
     font-size: 0.75rem;
     font-weight: 800;
     letter-spacing: 0.12em;
@@ -266,9 +289,9 @@ code {
     gap: 10px;
     min-height: 48px;
     padding: 12px 14px;
-    border-radius: 16px;
-    border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.03);
+    border-radius: 14px;
+    border: 1px solid #2a3140;
+    background: rgba(255, 255, 255, 0.025);
 }
 
 .mini-stat {
@@ -294,8 +317,8 @@ code {
 
 .preview-window {
     padding: 16px;
-    border-radius: 28px;
-    background: linear-gradient(180deg, #10141c 0%, #0f131b 100%);
+    border-radius: 22px;
+    background: linear-gradient(180deg, #0f131b 0%, #0d1118 100%);
     border: 1px solid var(--line-strong);
     min-height: 420px;
 }
@@ -322,7 +345,7 @@ code {
 
 .preview-sidebar,
 .preview-main {
-    border-radius: 20px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -358,6 +381,22 @@ code {
     padding: 18px;
     display: grid;
     gap: 14px;
+}
+
+.preview-toolbar {
+    display: flex;
+    gap: 10px;
+}
+
+.preview-chip {
+    width: 92px;
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.preview-chip.small {
+    width: 58px;
 }
 
 .preview-card.large {
@@ -426,7 +465,7 @@ code {
     display: flex;
     justify-content: space-between;
     gap: 18px;
-    padding: 28px;
+    padding: 24px 26px;
 }
 
 .compact-hero h1 {
@@ -444,6 +483,10 @@ code {
     padding: 22px;
     display: grid;
     gap: 18px;
+}
+
+.official-card {
+    border-color: #2a3343;
 }
 
 .guild-panel-head {
@@ -465,7 +508,7 @@ code {
     place-items: center;
     font-weight: 800;
     color: white;
-    background: linear-gradient(135deg, var(--accent) 0%, #7d96ff 100%);
+    background: linear-gradient(135deg, #4f79da 0%, #648dff 100%);
 }
 
 .guild-avatar-fallback {
@@ -515,19 +558,19 @@ code {
     gap: 8px;
     padding: 10px;
     border: 1px solid var(--line);
-    border-radius: 22px;
-    background: rgba(20, 24, 33, 0.88);
+    border-radius: 18px;
+    background: rgba(17, 21, 30, 0.94);
 }
 
 .sidebar-nav a {
     padding: 12px 14px;
-    border-radius: 14px;
+    border-radius: 12px;
     color: var(--muted-strong);
     font-weight: 700;
 }
 
 .sidebar-nav a:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.035);
 }
 
 .progress-meter {
@@ -560,6 +603,7 @@ code {
     padding: 20px;
     display: grid;
     gap: 8px;
+    border-color: #2a3343;
 }
 
 .overview-card span {
@@ -579,7 +623,7 @@ code {
 }
 
 .panel-section {
-    padding: 24px;
+    padding: 22px;
     display: grid;
     gap: 18px;
 }
@@ -619,7 +663,7 @@ select {
     width: 100%;
     padding: 13px 14px;
     color: var(--text);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--line-strong);
     border-radius: 14px;
     font: inherit;
@@ -640,9 +684,9 @@ option {
 .empty-card,
 .command-callout,
 .role-option {
-    border-radius: 18px;
-    border: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 1px solid #293140;
+    background: rgba(255, 255, 255, 0.025);
 }
 
 .list-card {
@@ -672,6 +716,7 @@ option {
     padding: 14px 16px;
     color: var(--muted-strong);
     font-weight: 600;
+    min-height: 52px;
 }
 
 .role-option input {
@@ -694,7 +739,7 @@ option {
 }
 
 .command-callout code {
-    font-size: 1.5rem;
+    font-size: 1.45rem;
     font-weight: 800;
     color: var(--text);
 }
@@ -712,6 +757,7 @@ option {
     display: grid;
     grid-template-columns: 52px minmax(0, 1fr);
     gap: 18px;
+    border-color: #2a3343;
 }
 
 .wizard-content {

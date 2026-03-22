@@ -17,6 +17,18 @@
                 <span>BattleBot</span>
             </a>
             <div class="topbar-actions">
+                {% if user %}
+                <div class="account-chip">
+                    <div class="avatar-shell">
+                        <img src="{{ user.avatar_url }}" alt="{{ user.username }} avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';">
+                        <span class="avatar-fallback" style="display:none;">{{ (user.global_name or user.username)[:1] }}</span>
+                    </div>
+                    <div>
+                        <strong>{{ user.global_name or user.username }}</strong>
+                        <span>@{{ user.username }}</span>
+                    </div>
+                </div>
+                {% endif %}
                 {% if oauth_ready %}
                     {% if user %}
                     <a class="button button-secondary" href="{{ dashboard_url }}">Open dashboard</a>
@@ -31,18 +43,18 @@
         </header>
 
         <main class="landing-grid">
-            <section class="hero-panel">
+            <section class="hero-panel official-hero">
                 <div class="hero-copy">
-                    <span class="section-tag">Discord alert system</span>
-                    <h1>Battle alerts without the chaos.</h1>
+                    <span class="section-tag">Discord alert platform</span>
+                    <h1>Battle alerts without the noise.</h1>
                     <p class="hero-text">
-                        BattleBot helps regiment servers notify the right people fast. Map your regiments to Discord roles,
-                        choose who can manage alerts, and send a clean VC dispatch from one dashboard.
+                        BattleBot gives regiment servers a clean way to manage ranker alerts. Assign command staff, map regiments to
+                        Discord roles, and launch battle pings from a dashboard built for speed.
                     </p>
                     <div class="hero-actions">
                         {% if oauth_ready %}
                             {% if user %}
-                            <a class="button" href="{{ dashboard_url }}">Go to dashboard</a>
+                            <a class="button" href="{{ dashboard_url }}">Open dashboard</a>
                             {% else %}
                             <a class="button" href="{{ login_url }}">Login with Discord</a>
                             {% endif %}
@@ -62,7 +74,7 @@
                         </article>
                     </div>
                 </div>
-                <div class="hero-preview">
+                <div class="hero-preview official-preview">
                     <div class="preview-window">
                         <div class="preview-header">
                             <span class="preview-dot"></span>
@@ -77,6 +89,10 @@
                                 <div class="preview-nav"></div>
                             </div>
                             <div class="preview-main">
+                                <div class="preview-toolbar">
+                                    <div class="preview-chip"></div>
+                                    <div class="preview-chip small"></div>
+                                </div>
                                 <div class="preview-card large"></div>
                                 <div class="preview-card-row">
                                     <div class="preview-card"></div>
