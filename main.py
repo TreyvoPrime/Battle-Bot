@@ -22,14 +22,38 @@ from starlette.middleware.sessions import SessionMiddleware
 
 
 BASE_DIR = Path(__file__).parent
-DATABASE_PATH = Path(os.getenv("DATABASE_PATH", BASE_DIR / "battlebot.db"))
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN") or os.getenv("TOKEN")
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
-DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID", "")
-DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET", "")
-DISCORD_REDIRECT_URI = os.getenv("DISCORD_REDIRECT_URI", f"{PUBLIC_BASE_URL}/auth/callback")
-SESSION_SECRET = os.getenv("SESSION_SECRET", secrets.token_urlsafe(32))
-DISCORD_BOT_PERMISSIONS = os.getenv("DISCORD_BOT_PERMISSIONS", "268437504")
+
+
+def env_first(*keys: str, default: str | None = None) -> str | None:
+    for key in keys:
+        value = os.getenv(key)
+        if value not in (None, ""):
+            return value
+    return default
+
+
+def resolve_public_base_url() -> str:
+    explicit = env_first("PUBLIC_BASE_URL", "DASHBOARD_BASE_URL")
+    if explicit:
+        return explicit.rstrip("/")
+
+    railway_domain = env_first("RAILWAY_PUBLIC_DOMAIN")
+    if railway_domain:
+        return f"https://{railway_domain}".rstrip("/")
+
+    return "http://127.0.0.1:8000"
+
+
+DATABASE_PATH = Path(env_first("DATABASE_PATH", default=str(BASE_DIR / "battlebot.db")))
+DISCORD_TOKEN = env_first("DISCORD_TOKEN", "TOKEN")
+PUBLIC_BASE_URL = resolve_public_base_url()
+DISCORD_CLIENT_ID = env_first("DISCORD_CLIENT_ID", "DISCORD_APP_ID", default="") or ""
+DISCORD_CLIENT_SECRET = env_first("DISCORD_CLIENT_SECRET", default="") or ""
+DISCORD_REDIRECT_URI = (
+    env_first("DISCORD_REDIRECT_URI", default=f"{PUBLIC_BASE_URL}/auth/callback") or f"{PUBLIC_BASE_URL}/auth/callback"
+)
+SESSION_SECRET = env_first("SESSION_SECRET", "DASHBOARD_SECRET_KEY", default=secrets.token_urlsafe(32)) or secrets.token_urlsafe(32)
+DISCORD_BOT_PERMISSIONS = env_first("DISCORD_BOT_PERMISSIONS", "DISCORD_INSTALL_PERMISSIONS", default="268437504") or "268437504"
 DEFAULT_COOLDOWN_MINUTES = int(os.getenv("DEFAULT_COOLDOWN_MINUTES", "2"))
 MAX_REGIMENTS_PER_GUILD = 25
 DM_SEND_DELAY_SECONDS = float(os.getenv("DM_SEND_DELAY_SECONDS", "0.35"))
