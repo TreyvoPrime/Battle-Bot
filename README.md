@@ -79,6 +79,14 @@ Fastest test-only fallback if you do not have a volume mounted yet:
 ./battlebot.db
 ```
 
+Optional internal admin variable:
+
+```text
+ROADSTONE_TEAM_USER_IDS=123456789012345678,234567890123456789
+```
+
+Use this comma-separated list of Discord user IDs to allow only Roadstone Interactive staff to run `/roadstone guilds`, which replies ephemerally with the guilds BattleBot is currently in.
+
 ## Clean Railway Rebuild
 
 If Railway got into a weird state with multiple services or the public domain is pointing at the wrong thing, the clean reset path is:

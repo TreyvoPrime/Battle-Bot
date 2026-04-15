@@ -58,6 +58,11 @@ DEFAULT_COOLDOWN_MINUTES = int(os.getenv("DEFAULT_COOLDOWN_MINUTES", "2"))
 MAX_REGIMENTS_PER_GUILD = 25
 DM_SEND_DELAY_SECONDS = float(os.getenv("DM_SEND_DELAY_SECONDS", "0.35"))
 DISCORD_API_BASE = "https://discord.com/api/v10"
+ROADSTONE_TEAM_USER_IDS = {
+    int(raw_value.strip())
+    for raw_value in (env_first("ROADSTONE_TEAM_USER_IDS", default="") or "").split(",")
+    if raw_value.strip().isdigit()
+}
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
@@ -471,6 +476,10 @@ async def member_can_manage_guild(member: discord.Member) -> bool:
     return any(role.id in admin_role_ids for role in member.roles)
 
 
+def is_roadstone_team_member(user_id: int) -> bool:
+    return user_id in ROADSTONE_TEAM_USER_IDS
+
+
 def extract_vc_id(vc_link: str) -> Optional[int]:
     try:
         return int(vc_link.strip().rstrip("/").split("/")[-1])
@@ -802,6 +811,7 @@ async def battleping(interaction: discord.Interaction) -> None:
 
 
 config_group = app_commands.Group(name="config", description="Configure BattleBot for this server.")
+roadstone_group = app_commands.Group(name="roadstone", description="Roadstone Interactive internal commands.")
 
 
 @config_group.command(name="dashboard", description="Get the secure dashboard link for this server.")
@@ -995,7 +1005,48 @@ async def config_list(interaction: discord.Interaction) -> None:
     )
 
 
+@roadstone_group.command(name="guilds", description="List the guilds this bot is currently in.")
+async def roadstone_guilds(interaction: discord.Interaction) -> None:
+    if not is_roadstone_team_member(interaction.user.id):
+        await interaction.response.send_message(
+            "This Roadstone Interactive command is restricted to the internal team.",
+            ephemeral=True,
+        )
+        return
+
+    guilds = sorted(bot.guilds, key=lambda guild: guild.name.lower())
+    if not guilds:
+        await interaction.response.send_message(
+            "BattleBot is not currently in any guilds.",
+            ephemeral=True,
+        )
+        return
+
+    lines = [
+        f"- **{guild.name}** | ID: `{guild.id}` | Members: `{guild.member_count or 0}`"
+        for guild in guilds
+    ]
+    chunks: list[str] = []
+    current_chunk = "**BattleBot Guilds**"
+
+    for line in lines:
+        candidate = f"{current_chunk}\n{line}"
+        if len(candidate) > 1800:
+            chunks.append(current_chunk)
+            current_chunk = line
+        else:
+            current_chunk = candidate
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    await interaction.response.send_message(chunks[0], ephemeral=True)
+    for chunk in chunks[1:]:
+        await interaction.followup.send(chunk, ephemeral=True)
+
+
 bot.tree.add_command(config_group)
+bot.tree.add_command(roadstone_group)
 
 
 @bot.event
